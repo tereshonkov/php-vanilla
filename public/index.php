@@ -35,16 +35,15 @@ if ($path === '/health') {
     );
 
     $controller = new App\HealthController($dbConnection);
-    $responseJson = $controller->info();
+    $response = $controller->info();
 
-    $responseData = json_decode($responseJson, true);
-    if (($responseData['status'] ?? 'error') === 'ok') {
+    if (($response['status'] ?? 'error') === 'ok') {
         http_response_code(200);
     } else {
         http_response_code(503);
     }
 
-    echo $responseJson;
+    echo json_encode($response, JSON_THROW_ON_ERROR);
     exit;
 }
 

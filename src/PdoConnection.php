@@ -22,7 +22,7 @@ final class PdoConnection
         private int $port = 3306
     ) {
         // Убрал тихие fallback'и. Если передали пустые строки — падаем сразу
-        if (empty($this->host) || empty($this->db) || empty($this->user)) {
+        if ($this->host === '' || $this->db === '' || $this->user === '') {
             throw new InvalidArgumentException('Database configuration is incomplete. Host, DB name, and User are required.');
         }
     }

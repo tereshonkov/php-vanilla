@@ -6,10 +6,12 @@ services:
     container_name: php-starter
     restart: unless-stopped
     environment:
+      APP_ENV: ${APP_ENV}
       DB_HOST: php-db
       DB_DATABASE: ${DB_DATABASE}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - .:/var/www
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
