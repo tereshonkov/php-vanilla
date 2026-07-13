@@ -1,5 +1,8 @@
 parameters:
-	level: 10
-	paths:
-		- src
-		- tests
+    level: 10
+    paths:
+        - src
+        - public
+    bootstrapFiles:
+        - vendor/autoload.php
+    treatPhpDocTypesAsCertain: false
