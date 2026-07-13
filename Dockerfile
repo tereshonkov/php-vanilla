@@ -1,0 +1,35 @@
+FROM php:8.5-fpm
+
+# Устанавливаем системные пакеты, нужные для сборки (zip, unzip, git нужны для Composer)
+RUN apt-get update && apt-get install -y \
+    git \
+    zip \
+    unzip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Устанавливаем драйвер pdo_mysql вместо pdo_pgsql
+RUN docker-php-ext-install pdo_mysql
+
+# Устанавливаем и включаем расширение Redis через PECL
+RUN pecl install redis && docker-php-ext-enable redis
+
+# Копируем Composer из официального образа
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www
+
+# Копируем файлы зависимостей и ставим их
+COPY composer.json ./
+RUN composer install --no-scripts --no-interaction
+
+# Копируем остальной код проекта
+COPY . .
+
+# Настраиваем права для веб-сервера (www-data)
+RUN chown -R www-data:www-data /var/www
+
+# Открываем стандартный порт PHP-FPM
+EXPOSE 9000
+
+# Запускаем родной PHP-FPM сервер (Nginx подключится к нему)
+CMD ["php-fpm"]
