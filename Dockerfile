@@ -19,14 +19,17 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www
 
 # Копируем файлы зависимостей и ставим их
-COPY composer.json ./
-RUN composer install --no-scripts --no-interaction
+# COPY composer.json ./
+# RUN composer install --no-scripts --no-interaction
 
 # Копируем остальной код проекта
 COPY . .
 
 # Настраиваем права для веб-сервера (www-data)
 RUN chown -R www-data:www-data /var/www
+
+# Включаем clear_env = no что бы не стирались данные из env при запуске
+RUN echo "clear_env = no" >> /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # Открываем стандартный порт PHP-FPM
 EXPOSE 9000

@@ -5,6 +5,11 @@ services:
       dockerfile: Dockerfile
     container_name: php-starter
     restart: unless-stopped
+    environment:
+      DB_HOST: php-db
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - .:/var/www
     networks:
@@ -37,13 +42,13 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3307:3306" # Это нужно что бы доступ к БД был только локально без открытого внешнего доступа
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
       - php-network
     healthcheck: # ждем пока БД не станет
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 5s
       timeout: 5s
       retries: 5
