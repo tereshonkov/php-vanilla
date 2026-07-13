@@ -23,7 +23,7 @@
         }
     },
     "scripts": {
-        "stan": "phpstan analyze src tests",
+        "stan": "phpstan analyze",
         "cs": "php-cs-fixer fix --dry-run --diff",
         "cs:fix": "php-cs-fixer fix",
         "test": "phpunit"
