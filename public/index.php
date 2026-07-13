@@ -17,9 +17,6 @@ set_exception_handler(function (\Throwable $exception) {
     exit;
 });
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
-$dotenv->load();
-
 $uri = new \Uri\Rfc3986\Uri($_SERVER['REQUEST_URI']);
 $path = $uri->getPath();
 
