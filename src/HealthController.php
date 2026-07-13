@@ -11,6 +11,9 @@ final class HealthController
 {
     public function __construct(private PdoConnection $pdoConnection) {}
 
+    /**
+     * @return array{status: string, php_version: string, mysql_version: string|null}
+     */
     public function info(): array
     {
 
@@ -20,10 +23,11 @@ final class HealthController
         try {
             $pdo = $this->pdoConnection->connect();
             $pdo->query('SELECT 1');
-            $mysqlVersion = $pdo->getAttribute(PDO::ATTR_SERVER_VERSION);
+            $version = $pdo->getAttribute(PDO::ATTR_SERVER_VERSION);
+            $mysqlVersion = is_string($version) ? $version : null;
         } catch (RuntimeException $e) {
             $status = 'degraded';
-            // Записываем ошибку в системный лог Docker (контейнер php-fpm сразу её покажет) 
+            // Записываем ошибку в системный лог Docker (контейнер php-fpm сразу её покажет)
             // Это намеренный шаг что бы показать красивый json и не уложить роут
             error_log("HealthCheck DB Error: " . $e->getMessage());
         }
@@ -31,7 +35,7 @@ final class HealthController
         return [
             'status' => $status,
             'php_version' => PHP_VERSION,
-            'mysql_version' => $mysqlVersion
+            'mysql_version' => $mysqlVersion,
         ];
     }
 }

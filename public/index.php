@@ -12,7 +12,7 @@ set_exception_handler(function (\Throwable $exception) {
         'status' => 'error',
         'message' => 'Internal Server Error',
         // В dev-окружении можно добавить для удобства:
-        'debug' => $exception->getMessage()
+        'debug' => $exception->getMessage(),
     ], JSON_THROW_ON_ERROR);
     exit;
 });
@@ -31,7 +31,7 @@ if ($path === '/health') {
         (string) getenv('DB_HOST'),
         (string) getenv('DB_DATABASE'),
         (string) getenv('DB_USER'),
-        (string) getenv('DB_PASSWORD')
+        (string) getenv('DB_PASSWORD'),
     );
 
     $controller = new App\HealthController($dbConnection);

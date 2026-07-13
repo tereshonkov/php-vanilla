@@ -9,7 +9,7 @@ use PDO;
 use PDOException;
 use RuntimeException;
 
-final class PdoConnection
+class PdoConnection
 {
     // Ленивое свойства (фишка в том что создается один раз при первом вызове)
     private ?PDO $pdo = null;
@@ -19,7 +19,7 @@ final class PdoConnection
         private string $db,
         private string $user,
         private string $pass,
-        private int $port = 3306
+        private int $port = 3306,
     ) {
         // Убрал тихие fallback'и. Если передали пустые строки — падаем сразу
         if ($this->host === '' || $this->db === '' || $this->user === '') {
@@ -49,7 +49,7 @@ final class PdoConnection
 
             return $this->pdo;
         } catch (PDOException $e) {
-            throw new RuntimeException("Database connection failed: " . $e->getMessage(), (int)$e->getCode(), $e);
+            throw new RuntimeException("Database connection failed: " . $e->getMessage(), (int) $e->getCode(), $e);
         }
     }
 }
