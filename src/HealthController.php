@@ -4,30 +4,35 @@ declare(strict_types=1);
 
 namespace App;
 
-use App\PdoService;
+use PDO;
 
 
-class HealthController
+final class HealthController
 {
-    public function __construct(private PdoService $pdoService) {}
+    public function __construct(private PdoConnection $pdo_connection) {}
 
-    public function get_info(): string
+    public function info()
     {
-        $data = [
-            'php_version' => PHP_VERSION,
-            'mysql_version' => null,
-        ];
+        $status = 'degraded';
+        $mysqlVersion = null;
 
-        $connection = $this->pdoService->connectPDO();
-
-        if ($connection !== null) {
-            $version = $connection->query('SELECT VERSION()')->fetchColumn();
-
-            if ($version !== false) {
-                $data['mysql_version'] = $version;
-            }
+        try {
+            $pdo = $this->pdo_connection->connect();
+            $status = 'ok';
+            $mysqlVersion = $pdo->getAttribute(PDO::ATTR_SERVER_VERSION);
+        } catch (\Exception $e) {
+            // Записываем ошибку в системный лог Docker (контейнер php-fpm сразу её покажет) 
+            // Это намеренный шаг что бы показать красивый json и не уложить роут
+            error_log("HealthCheck DB Error: " . $e->getMessage());
         }
 
-        return (string) json_encode($data);
+        $data = [
+            'status' => $status,
+            'php_version' => PHP_VERSION,
+            'mysql_version' => $mysqlVersion
+        ];
+
+        // Если внутри $data будет ошибка, PHP выбросит JsonException
+        return json_encode($data, JSON_THROW_ON_ERROR);
     }
 }
