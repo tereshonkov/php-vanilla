@@ -23,7 +23,7 @@ WORKDIR /var/www
 # RUN composer install --no-scripts --no-interaction
 
 # Оптимальное кэширование слоев для продакшена (копируем только зависимости)
-COPY composer.json composer.lock ./
+# COPY composer.json composer.lock ./
 
 # Копируем остальной код проекта
 COPY . .

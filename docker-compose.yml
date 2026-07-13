@@ -13,6 +13,8 @@ services:
     volumes:
       - .:/var/www
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - php-network
     depends_on:
