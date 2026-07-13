@@ -17,6 +17,11 @@
             "App\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "scripts": {
         "stan": "phpstan analyze src tests",
         "cs": "php-cs-fixer fix --dry-run --diff",
