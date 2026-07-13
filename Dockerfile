@@ -7,20 +7,23 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем драйвер pdo_mysql вместо pdo_pgsql
-RUN docker-php-ext-install pdo_mysql
+# Устанавливаем встроенные расширения: pdo_mysql и bcmath
+RUN docker-php-ext-install pdo_mysql bcmath
 
-# Устанавливаем и включаем расширение Redis через PECL
-RUN pecl install redis && docker-php-ext-enable redis
+# Устанавливаем через PECL и включаем сторонние расширения: Redis и Xdebug
+RUN pecl install redis xdebug && docker-php-ext-enable redis xdebug
 
 # Копируем Composer из официального образа
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
 # Копируем файлы зависимостей и ставим их
 # COPY composer.json ./
 # RUN composer install --no-scripts --no-interaction
+
+# Оптимальное кэширование слоев для продакшена (копируем только зависимости)
+COPY composer.json composer.lock ./
 
 # Копируем остальной код проекта
 COPY . .
