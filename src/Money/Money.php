@@ -44,7 +44,7 @@ final readonly class Money
     public function add(Money $other): self
     {
         if ($other->currency !== $this->currency) {
-            throw new InvalidArgumentException();
+            throw CurrencyMismatchException::create($this->currency, $other->currency);
         };
 
         return new self($this->amount + $other->amount, $this->currency);
@@ -52,8 +52,8 @@ final readonly class Money
     public function subtract(Money $other): self
     {
         if ($other->currency !== $this->currency) {
-            throw new InvalidArgumentException();
-        }
+            throw CurrencyMismatchException::create($this->currency, $other->currency);
+        };
 
         return new self($this->amount - $other->amount, $this->currency);
     }
