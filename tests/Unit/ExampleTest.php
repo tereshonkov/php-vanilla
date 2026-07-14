@@ -2,16 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Tests;
+namespace Tests\Unit;
 
 use App\HealthController;
 use App\PdoConnection;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Создаем простую заглушку, которая всегда бросает исключение при попытке подключения.
- * PHPStan легко прочитает этот класс, так как тут нет магии PHPUnit.
- */
 class FailingPdoConnectionStub extends PdoConnection
 {
     public function __construct()
