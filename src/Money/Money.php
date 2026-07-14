@@ -22,13 +22,13 @@ final readonly class Money
     public static function fromString(string $amount, Currency $c): self
     {
         if (!preg_match('/^-?\d+(\.\d+)?$/', $amount)) {
-            throw new \InvalidArgumentException("Invalid money format");
+            throw new InvalidArgumentException("Invalid money format");
         }
 
         $parts = explode('.', $amount);
 
         if (count($parts) === 2 && strlen($parts[1]) > $c->decimals()) {
-            throw new \InvalidArgumentException();
+            throw new InvalidArgumentException();
         }
 
         $cents = (int) bcmul($amount, (string) $c->subunitFactor(), 0);
@@ -44,7 +44,7 @@ final readonly class Money
     public function add(Money $other): self
     {
         if ($other->currency !== $this->currency) {
-            throw new \InvalidArgumentException();
+            throw new InvalidArgumentException();
         };
 
         return new self($this->amount + $other->amount, $this->currency);
@@ -52,7 +52,7 @@ final readonly class Money
     public function subtract(Money $other): self
     {
         if ($other->currency !== $this->currency) {
-            throw new \InvalidArgumentException();
+            throw new InvalidArgumentException();
         }
 
         return new self($this->amount - $other->amount, $this->currency);
