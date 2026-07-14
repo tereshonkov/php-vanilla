@@ -52,4 +52,21 @@ class MoneyTest extends TestCase
         $this->expectException(CurrencyMismatchException::class);
         $usd->subtract($eur);
     }
+
+    public function test_it_HalfEven(): void
+    {
+        $usd = Money::fromCents(15, Currency::USD);
+        $result = $usd->multiply('0.5');
+        $this->assertSame(8, $result->amount);
+    }
+
+    public function test_it_Immutable(): void
+    {
+        $usd = Money::fromCents(100, Currency::USD);
+        $new = $usd->add(Money::fromCents(50, Currency::USD));
+
+        $this->assertSame(100, $usd->amount);
+        $this->assertSame(150, $new->amount);
+        $this->assertNotSame($usd, $new);
+    }
 }
