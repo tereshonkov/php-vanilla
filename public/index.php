@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use Uri\InvalidUriException;
 use App\HealthController;
 use App\PdoConnection;
+use Uri\InvalidUriException;
 
 require __DIR__ . '/../vendor/autoload.php';
 
