@@ -65,6 +65,10 @@ final readonly class Money
     }
     public function divide(int|string $divisor): self
     {
+        if ((string) $divisor === '0') {
+            throw new InvalidArgumentException("Division by zero");
+        }
+
         $div = bcdiv((string) $this->amount, (string) $divisor, 4);
         $rounded = bcround($div, 0, RoundingMode::HalfEven);
         return new self((int) $rounded, $this->currency);
