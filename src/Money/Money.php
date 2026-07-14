@@ -63,7 +63,12 @@ final readonly class Money
         $rounded = bcround($mult, 0, RoundingMode::HalfEven);
         return new self((int) $rounded, $this->currency);
     }
-    public function divide(int|string $divisor): self {}
+    public function divide(int|string $divisor): self
+    {
+        $div = bcdiv((string) $this->amount, (string) $divisor, 4);
+        $rounded = bcround($div, 0, RoundingMode::HalfEven);
+        return new self((int) $rounded, $this->currency);
+    }
     public function negate(): self {}
     public function absolute(): self {}
 }
