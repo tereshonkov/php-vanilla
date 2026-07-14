@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace App\Money;
+
 enum Currency: string
 {
     case UAH = 'UAH';
@@ -29,7 +31,8 @@ enum Currency: string
         };
     }
 
-    public function subunitFactor(): int {
+    public function subunitFactor(): int
+    {
         return 10 ** $this->decimals();
     }
 };
