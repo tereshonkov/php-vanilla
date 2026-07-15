@@ -6,61 +6,86 @@ namespace Tests\Unit;
 
 use App\Money\Money;
 use App\Money\Currency;
-use App\Money\CurrencyMismatchException;
+use App\Money\MoneyExceptions\CurrencyMismatchException;
+use App\Money\MoneyExceptions\InvalidAmount;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-class MoneyTest extends TestCase
+final class MoneyTest extends TestCase
 {
-    public function test_it_can_be_created_from_strings(): void
-    {
-        $usdMoney = Money::fromString('19.99', Currency::USD);
-        $this->assertSame(1999, $usdMoney->amount);
+    // DATA PROVIDER fromString
 
-        $jpyMoney = Money::fromString('1999', Currency::JPY);
-        $this->assertSame(1999, $jpyMoney->amount);
+    public static function validStringValues(): iterable
+    {
+        yield 'USD cents representation' => ['19.99', Currency::USD, 1999]; // Тут три аргумента
+        yield 'JPY no cents representation' => ['1999', Currency::JPY, 1999];
     }
 
-    public function test_it_throws_exception_when_adding_bad_strings(): void
+    #[DataProvider('validStringValues')]
+    public function test_from_string_parses_valid_values(string $input, Currency $currency, int $expectedCents): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        Money::fromString('19.5', Currency::JPY);
-
-        $this->expectException(\InvalidArgumentException::class);
-        Money::fromString('abc', Currency::USD);
-
-        $this->expectException(\InvalidArgumentException::class);
-        Money::fromString('', Currency::USD);
-
-        $this->expectException(\InvalidArgumentException::class);
-        Money::fromString('1.99', Currency::USD);
-
-        $this->expectException(\InvalidArgumentException::class);
-        Money::fromString('1.2.3', Currency::USD);
-
-        $this->expectException(\InvalidArgumentException::class);
-        Money::fromString('19.999', Currency::USD);
+        $money = Money::fromString($input, $currency);
+        $this->assertSame($expectedCents, $money->amount);
     }
 
-    public function test_it_throws_exception_when_adding_different_currencies(): void
+    // DATA PROVIDER for invalid values
+
+    public static function invalidStringValues(): iterable
+    {
+        yield 'JPY with fraction' => ['19.5', Currency::JPY];
+        yield 'letters'          => ['abc', Currency::USD];
+        yield 'empty string'     => ['', Currency::USD];
+        // yield 'too precise'   => ['1.99', Currency::USD];
+        yield 'double dot'       => ['1.2.3', Currency::USD];
+        yield 'too many decimals' => ['19.999', Currency::USD];
+    }
+
+    #[DataProvider('invalidStringValues')]
+    public function test_from_string_rejects_invalid_values(string $input, Currency $currency): void
+    {
+        $this->expectException(InvalidAmount::class);
+        Money::fromString($input, $currency);
+    }
+
+    // different courses
+    public function test_add_throws_exception_on_currency_mismatch(): void
     {
         $usd = Money::fromCents(100, Currency::USD);
         $eur = Money::fromCents(100, Currency::EUR);
 
         $this->expectException(CurrencyMismatchException::class);
         $usd->add($eur);
+    }
+
+    public function test_subtract_throws_exception_on_currency_mismatch(): void
+    {
+        $usd = Money::fromCents(100, Currency::USD);
+        $eur = Money::fromCents(100, Currency::EUR);
 
         $this->expectException(CurrencyMismatchException::class);
         $usd->subtract($eur);
     }
 
-    public function test_it_HalfEven(): void
+
+    // Rounded (HalfEven / Bankers Rounding)
+
+    public static function roundingCases(): iterable
     {
-        $usd = Money::fromCents(15, Currency::USD);
-        $result = $usd->multiply('0.5');
-        $this->assertSame(8, $result->amount);
+        yield '15 * 0.5 -> 7.5 -> 8 (even)' => [15, '0.5', 8];
+        yield '25 * 0.5 -> 12.5 -> 12 (even)' => [25, '0.5', 12];
     }
 
-    public function test_it_Immutable(): void
+    #[DataProvider('roundingCases')]
+    public function test_multiply_uses_bankers_rounding(int $initialCents, string $multiplier, int $expectedCents): void
+    {
+        $usd = Money::fromCents($initialCents, Currency::USD);
+        $result = $usd->multiply($multiplier);
+
+        $this->assertSame($expectedCents, $result->amount);
+    }
+
+    // Immutable
+    public function test_operations_are_immutable(): void
     {
         $usd = Money::fromCents(100, Currency::USD);
         $new = $usd->add(Money::fromCents(50, Currency::USD));
@@ -70,25 +95,29 @@ class MoneyTest extends TestCase
         $this->assertNotSame($usd, $new);
     }
 
-    public function test_it_negate_and_absolute(): void
+    // negative and absolute
+
+    public function test_negate_and_absolute_calculations(): void
     {
         $money = Money::fromCents(10, Currency::USD);
+
         $negate = $money->negate();
         $this->assertSame(-10, $negate->amount);
+
         $absolute = $negate->absolute();
         $this->assertSame(10, $absolute->amount);
     }
 
-    // equals
-    // равные суммы, одна валюта → true  (ГЛАВНЫЙ кейс, его у тебя не было)
-    public function test_equals_returns_true_for_same_amount(): void
+
+    // (equals)
+
+    public function test_equals_returns_true_for_same_amount_and_currency(): void
     {
         $a = Money::fromCents(100, Currency::USD);
         $b = Money::fromCents(100, Currency::USD);
         $this->assertTrue($a->equals($b));
     }
 
-    // разные суммы, одна валюта → false
     public function test_equals_returns_false_for_different_amount(): void
     {
         $a = Money::fromCents(200, Currency::USD);
@@ -96,7 +125,6 @@ class MoneyTest extends TestCase
         $this->assertFalse($a->equals($b));
     }
 
-    // разные валюты → false (не исключение!)
     public function test_equals_returns_false_for_different_currencies(): void
     {
         $usd = Money::fromCents(100, Currency::USD);
@@ -104,32 +132,35 @@ class MoneyTest extends TestCase
         $this->assertFalse($usd->equals($uah));
     }
 
-    // isGreaterThan
-    public function test_greater_than_throws_for_different_currencies(): void
+
+    // (isGreaterThan)
+    public function test_greater_than_throws_exception_on_currency_mismatch(): void
     {
+        $usd = Money::fromCents(100, Currency::USD);
+        $uah = Money::fromCents(100, Currency::UAH);
+
         $this->expectException(CurrencyMismatchException::class);
-        Money::fromCents(100, Currency::USD)
-            ->isGreaterThan(Money::fromCents(100, Currency::UAH));
+        $usd->isGreaterThan($uah);
     }
 
     public function test_greater_than_returns_true_when_larger(): void
     {
         $a = Money::fromCents(200, Currency::USD);
         $b = Money::fromCents(100, Currency::USD);
-        self::assertTrue($a->isGreaterThan($b));      // 200 > 100
+        $this->assertTrue($a->isGreaterThan($b));
     }
 
     public function test_greater_than_returns_false_when_smaller(): void
     {
         $a = Money::fromCents(100, Currency::USD);
         $b = Money::fromCents(200, Currency::USD);
-        self::assertFalse($a->isGreaterThan($b));     // 100 > 200
+        $this->assertFalse($a->isGreaterThan($b));
     }
 
     public function test_greater_than_returns_false_when_equal(): void
     {
         $a = Money::fromCents(100, Currency::USD);
         $b = Money::fromCents(100, Currency::USD);
-        self::assertFalse($a->isGreaterThan($b));     // 100 > 100 — строго больше!
+        $this->assertFalse($a->isGreaterThan($b));
     }
 }
