@@ -6,7 +6,7 @@ namespace App\Money\MoneyExceptions;
 
 use InvalidArgumentException;
 
-class InvalidAllocation extends InvalidArgumentException implements MoneyException
+final class InvalidAllocation extends InvalidArgumentException implements MoneyException
 {
     // In proccess....
 }

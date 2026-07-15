@@ -6,10 +6,10 @@ namespace App\Money\MoneyExceptions;
 
 use App\Money\Currency;
 
-class CurrencyMismatchException extends \InvalidArgumentException implements MoneyException
+final class CurrencyMismatchException extends \InvalidArgumentException implements MoneyException
 {
-    public static function create(Currency $expected, Currency $actual): self
+    public static function create(Currency $first, Currency $second): self
     {
-        return new self("Cannot operate on different currencies: {$expected->value} and {$actual->value}");
+        return new self("Cannot operate on different currencies: {$first->value} and {$second->value}");
     }
 }

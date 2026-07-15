@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Money\MoneyExceptions;
 
-use InvalidArgumentException;
-use LogicException;
+use OverflowException;
 
-class MoneyOverflowException extends LogicException implements MoneyException
+final class MoneyOverflowException extends OverflowException implements MoneyException
 {
     public static function forAmount(string $amount): self
     {

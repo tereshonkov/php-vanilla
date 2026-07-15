@@ -6,6 +6,7 @@ namespace App\Money;
 
 use App\Money\MoneyExceptions\InvalidAmount;
 use App\Money\MoneyExceptions\CurrencyMismatchException;
+use App\Money\MoneyExceptions\DivisionByZeroException;
 use App\Money\MoneyExceptions\MoneyOverflowException;
 use RoundingMode;
 
@@ -87,7 +88,7 @@ final readonly class Money
         $scale = $decimalPos !== false ? strlen($divisorString) - $decimalPos - 1 : 0;
 
         if (bccomp($divisorString, '0', $scale) === 0) {
-            throw InvalidAmount::divide($divisor);
+            throw DivisionByZeroException::create($divisor);
         }
 
         $div = bcdiv((string) $this->amount, $divisorString, 4);
