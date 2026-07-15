@@ -7,6 +7,4 @@ namespace App\Money\MoneyExceptions;
 /**
  * All Exceptions of Money.
  */
-interface MoneyException extends \Throwable
-{
-}
+interface MoneyException extends \Throwable {}

@@ -15,7 +15,7 @@ final class InvalidAmount extends \InvalidArgumentException implements MoneyExce
     {
         return new self(
             "The amount '{$amount}' has invalid scale. " .
-                "Currency expected maximum {$expected} decimal places, but got {$actual}."
+                "Currency expected maximum {$expected} decimal places, but got {$actual}.",
         );
     }
 }

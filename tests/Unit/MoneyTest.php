@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use App\Money\Money;
 use App\Money\Currency;
+use App\Money\Money;
 use App\Money\MoneyExceptions\CurrencyMismatchException;
 use App\Money\MoneyExceptions\InvalidAmount;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
 
 final class MoneyTest extends TestCase
 {
     // DATA PROVIDER fromString
 
+    /**
+     * @return iterable<string, array{0: string, 1: Currency, 2: int}>
+     */
     public static function validStringValues(): iterable
     {
         yield 'USD cents representation' => ['19.99', Currency::USD, 1999]; // Тут три аргумента
@@ -30,6 +33,9 @@ final class MoneyTest extends TestCase
 
     // DATA PROVIDER for invalid values
 
+    /**
+     * @return iterable<string, array{0: string, 1: Currency}>
+     */
     public static function invalidStringValues(): iterable
     {
         yield 'JPY with fraction' => ['19.5', Currency::JPY];
@@ -69,6 +75,9 @@ final class MoneyTest extends TestCase
 
     // Rounded (HalfEven / Bankers Rounding)
 
+    /**
+     * @return iterable<string, array{0: int, 1: string, 2: int}>
+     */
     public static function roundingCases(): iterable
     {
         yield '15 * 0.5 -> 7.5 -> 8 (even)' => [15, '0.5', 8];
@@ -111,6 +120,9 @@ final class MoneyTest extends TestCase
 
     // (equals)
 
+    /**
+     * @return iterable<string, array{0: int, 1: Currency, 2: int, 3: Currency, 4: bool}>
+     */
     public static function equalsCases(): iterable
     {
         yield 'same amount and currency' => [100, Currency::USD, 100, Currency::USD, true];

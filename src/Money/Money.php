@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Money;
 
-use App\Money\MoneyExceptions\InvalidAmount;
 use App\Money\MoneyExceptions\CurrencyMismatchException;
 use App\Money\MoneyExceptions\DivisionByZeroException;
+use App\Money\MoneyExceptions\InvalidAmount;
 use App\Money\MoneyExceptions\MoneyOverflowException;
 use RoundingMode;
 
@@ -24,6 +24,7 @@ final readonly class Money
 
     public static function fromString(string $amount, Currency $c): self
     {
+        /** @var numeric-string $cleanAmount */
         $cleanAmount = self::validateNumericFactor($amount);
 
         $parts = explode('.', $amount);
@@ -73,6 +74,7 @@ final readonly class Money
     }
     public function multiply(int|string $factor): self
     {
+        /** @var numeric-string $factorStr */
         $factorStr = self::validateNumericFactor($factor);
 
         $mult = bcmul((string) $this->amount, $factorStr, 4);
@@ -83,6 +85,7 @@ final readonly class Money
     }
     public function divide(int|string $divisor): self
     {
+        /** @var numeric-string $divisorString */
         $divisorString = self::validateNumericFactor($divisor);
         $decimalPos = strpos($divisorString, '.');
         $scale = $decimalPos !== false ? strlen($divisorString) - $decimalPos - 1 : 0;
@@ -147,6 +150,11 @@ final readonly class Money
         return bcdiv((string) $this->amount, $divisor, $decimals);
     }
 
+    public function format(): string
+    {
+        return $this->toDecimalString() . ' ' . $this->currency->symbol();
+    }
+
     /**
      * Helpers
      */
@@ -162,6 +170,7 @@ final readonly class Money
 
     private static function validateNumericFactor(int|string $value): string
     {
+        /** @var numeric-string $strValue */
         $strValue = (string) $value;
 
         $isValidFormat = preg_match('/^(0|-?[1-9]\d*)(\.\d+)?$/', $strValue);
@@ -174,13 +183,19 @@ final readonly class Money
         return $strValue;
     }
 
-    private static function assertNoOverflow(string | int $element): int
+    /**
+     * @param numeric-string|int $element
+     */
+    private static function assertNoOverflow(string|int $element): int
     {
-        $isTooLarge = bccomp($element, (string) PHP_INT_MAX) === 1;
-        $isTooSmall = bccomp($element, (string) PHP_INT_MIN) === -1;
+        /** @var numeric-string $stringElement */
+        $stringElement = (string) $element;
+
+        $isTooLarge = bccomp($stringElement, (string) PHP_INT_MAX) === 1;
+        $isTooSmall = bccomp($stringElement, (string) PHP_INT_MIN) === -1;
 
         if ($isTooLarge || $isTooSmall) {
-            throw MoneyOverflowException::forAmount($element);
+            throw MoneyOverflowException::forAmount((string) $element);
         }
 
         return (int) $element;
