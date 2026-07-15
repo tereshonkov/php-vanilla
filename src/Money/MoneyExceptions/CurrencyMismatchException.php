@@ -6,7 +6,7 @@ namespace App\Money\MoneyExceptions;
 
 use App\Money\Currency;
 
-class CurrencyMismatchException extends \InvalidArgumentException
+class CurrencyMismatchException extends \InvalidArgumentException implements MoneyException
 {
     public static function create(Currency $expected, Currency $actual): self
     {

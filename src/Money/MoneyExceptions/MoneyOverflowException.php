@@ -6,7 +6,7 @@ namespace App\Money\MoneyExceptions;
 
 use InvalidArgumentException;
 
-class MoneyOverflowException extends InvalidArgumentException
+class MoneyOverflowException extends InvalidArgumentException implements MoneyException
 {
     public static function forAmount(string $amount): self
     {
