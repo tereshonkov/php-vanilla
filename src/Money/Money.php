@@ -23,21 +23,29 @@ final readonly class Money
 
     public static function fromString(string $amount, Currency $c): self
     {
-        if (!preg_match('/^(0|-?[1-9]\d*)(\.\d+)?$/', $amount)) {
+        $isValidFormat = self::validateNumericFactor($amount);
+        $isNegativeZero = str_starts_with($amount, '-') && bccomp($amount, '0', 10) === 0;
+
+        if (!$isValidFormat || $isNegativeZero) {
             throw InvalidAmount::create($amount);
         }
 
         $parts = explode('.', $amount);
 
-        if (count($parts) === 2 && strlen($parts[1]) > $c->decimals()) {
-            throw InvalidAmount::create($amount);
+        if (count($parts) === 2) {
+            $actualDecimals = strlen($parts[1]);
+            $expectedDecimals = $c->decimals();
+
+            if ($actualDecimals > $expectedDecimals) {
+                throw InvalidAmount::invalidDecimals($amount, $expectedDecimals, $actualDecimals);
+            }
         }
 
         $centsStirng = bcmul($amount, (string) $c->subunitFactor(), 0);
 
-        $cent = self::assertNoOverflow($centsStirng);
+        $cents = self::assertNoOverflow($centsStirng);
 
-        return new self($cent, $c);
+        return new self($cents, $c);
     }
 
     public static function zero(Currency $c): self
@@ -69,14 +77,17 @@ final readonly class Money
     }
     public function multiply(int|string $factor): self
     {
-        $mult = bcmul((string) $this->amount, (string) $factor, 4);
+        $factorStr = self::validateNumericFactor($factor);
+
+        $mult = bcmul((string) $this->amount, $factorStr, 4);
         $rounded = bcround($mult, 0, RoundingMode::HalfEven);
         $safe = self::assertNoOverflow($rounded);
+
         return new self($safe, $this->currency);
     }
     public function divide(int|string $divisor): self
     {
-        $divisorString = (string) $divisor;
+        $divisorString = self::validateNumericFactor($divisor);
         $decimalPos = strpos($divisorString, '.');
         $scale = $decimalPos !== false ? strlen($divisorString) - $decimalPos - 1 : 0;
 
@@ -92,14 +103,30 @@ final readonly class Money
     }
     public function negate(): self
     {
-        return new self(-$this->amount, $this->currency);
+        $safe = self::assertNoOverflow(-$this->amount);
+        return new self($safe, $this->currency);
     }
     public function absolute(): self
     {
-        return new self(abs($this->amount), $this->currency);
+        $safe = self::assertNoOverflow(abs($this->amount));
+        return new self($safe, $this->currency);
     }
 
-    private static function assertNoOverflow(string | int $element)
+    /**
+     * Helpers
+     */
+    private static function validateNumericFactor(int|string $value): string
+    {
+        $strValue = (string) $value;
+
+        if (!preg_match('/^(0|-?[1-9]\d*)(\.\d+)?$/', $strValue)) {
+            throw InvalidAmount::create($strValue);
+        }
+
+        return $strValue;
+    }
+
+    private static function assertNoOverflow(string | int $element): int
     {
         $isTooLarge = bccomp($element, (string) PHP_INT_MAX) === 1;
         $isTooSmall = bccomp($element, (string) PHP_INT_MIN) === -1;
