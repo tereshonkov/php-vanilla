@@ -27,7 +27,7 @@ final readonly class Money
         /** @var numeric-string $cleanAmount */
         $cleanAmount = self::validateNumericFactor($amount);
 
-        $parts = explode('.', $amount);
+        $parts = explode('.', $cleanAmount);
 
         if (count($parts) === 2) {
             $actualDecimals = strlen($parts[1]);
@@ -38,9 +38,9 @@ final readonly class Money
             }
         }
 
-        $centsStirng = bcmul($cleanAmount, (string) $c->subunitFactor(), 0);
+        $centsString = bcmul($cleanAmount, (string) $c->subunitFactor(), 0);
 
-        $cents = self::assertNoOverflow($centsStirng);
+        $cents = self::assertNoOverflow($centsString);
 
         return new self($cents, $c);
     }
@@ -54,7 +54,7 @@ final readonly class Money
     {
         if ($other->currency !== $this->currency) {
             throw CurrencyMismatchException::create($this->currency, $other->currency);
-        };
+        }
 
         $sum = bcadd((string) $this->amount, (string) $other->amount, 0);
         $safe = self::assertNoOverflow($sum);
@@ -155,6 +155,19 @@ final readonly class Money
         return $this->toDecimalString() . ' ' . $this->currency->symbol();
     }
 
+    public function withCurrency(Currency $currency): self
+    {
+        return clone($this, ['currency' => $currency]);
+        /**
+         * Раньше делали так return new self($this->amount, $currency);
+         * Проблема в том что чем больше свойств тем больше нужно изменений в методе,
+         * Кстати если бы не readonly то можно было бы через __clone
+         * $clone = clone $this;
+         * $clone->currency = $currency;
+         * return $clone;
+         */
+    }
+
     /**
      * Helpers
      */
@@ -168,6 +181,7 @@ final readonly class Money
         return $this->amount <=> $other->amount;
     }
 
+    /** @return numeric-string */
     private static function validateNumericFactor(int|string $value): string
     {
         /** @var numeric-string $strValue */
