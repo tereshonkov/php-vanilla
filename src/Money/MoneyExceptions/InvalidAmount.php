@@ -13,6 +13,6 @@ class InvalidAmount extends \InvalidArgumentException
 
     public static function divide(string $devider): self
     {
-        return new self("Invalid format,you can't devide {$devider}")
+        return new self("Invalid format, you can't divide {$devider}")
     }
 }

@@ -10,6 +10,6 @@ class MoneyOverflowException extends InvalidArgumentException
 {
     public static function forAmount(string $amount): self
     {
-        return new self("The amount '{$amount}' is too large and exceeds the maximum allowed limit.");
+        return new self("The amount '{$amount}' is exceeds the maximum allowed limit.");
     }
 }

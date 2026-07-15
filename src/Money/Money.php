@@ -77,7 +77,6 @@ final readonly class Money
     public function divide(int|string $divisor): self
     {
         $divisorString = (string) $divisor;
-
         $decimalPos = strpos($divisorString, '.');
         $scale = $decimalPos !== false ? strlen($divisorString) - $decimalPos - 1 : 0;
 
@@ -85,7 +84,7 @@ final readonly class Money
             throw InvalidAmount::divide($divisor);
         }
 
-        $div = bcdiv((string) $this->amount, (string) $divisor, 4);
+        $div = bcdiv((string) $this->amount, $divisorString, 4);
         $rounded = bcround($div, 0, RoundingMode::HalfEven);
         $safe = self::assertNoOverflow($rounded);
 
