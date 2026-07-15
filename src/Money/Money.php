@@ -139,6 +139,13 @@ final readonly class Money
     {
         return $this->amount < 0;
     }
+    public function toDecimalString(): string
+    {
+        $decimals = $this->currency->decimals();
+        $divisor = bcpow('10', (string) $decimals);
+
+        return bcdiv((string) $this->amount, $divisor, $decimals);
+    }
 
     /**
      * Helpers
@@ -147,11 +154,10 @@ final readonly class Money
     private function compareTo(Money $other): int
     {
         if ($other->currency !== $this->currency) {
-            throw CurrencyMismatchException::create($other->currency, $this->currency);
+            throw CurrencyMismatchException::create($this->currency, $other->currency);
         }
-        $money = bccomp((string) $this->amount, (string) $other->amount);
 
-        return $money;
+        return $this->amount <=> $other->amount;
     }
 
     private static function validateNumericFactor(int|string $value): string
