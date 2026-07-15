@@ -111,25 +111,20 @@ final class MoneyTest extends TestCase
 
     // (equals)
 
-    public function test_equals_returns_true_for_same_amount_and_currency(): void
+    public static function equalsCases(): iterable
     {
-        $a = Money::fromCents(100, Currency::USD);
-        $b = Money::fromCents(100, Currency::USD);
-        $this->assertTrue($a->equals($b));
+        yield 'same amount and currency' => [100, Currency::USD, 100, Currency::USD, true];
+        yield 'different amount'         => [200, Currency::USD, 100, Currency::USD, false];
+        yield 'different currency'       => [100, Currency::USD, 100, Currency::UAH, false];
     }
 
-    public function test_equals_returns_false_for_different_amount(): void
+    #[DataProvider('equalsCases')]
+    public function test_equals(int $amountA, Currency $currencyA, int $amountB, Currency $currencyB, bool $expected): void
     {
-        $a = Money::fromCents(200, Currency::USD);
-        $b = Money::fromCents(100, Currency::USD);
-        $this->assertFalse($a->equals($b));
-    }
+        $a = Money::fromCents($amountA, $currencyA);
+        $b = Money::fromCents($amountB, $currencyB);
 
-    public function test_equals_returns_false_for_different_currencies(): void
-    {
-        $usd = Money::fromCents(100, Currency::USD);
-        $uah = Money::fromCents(100, Currency::UAH);
-        $this->assertFalse($usd->equals($uah));
+        $this->assertSame($expected, $a->equals($b));
     }
 
 
@@ -162,5 +157,33 @@ final class MoneyTest extends TestCase
         $a = Money::fromCents(100, Currency::USD);
         $b = Money::fromCents(100, Currency::USD);
         $this->assertFalse($a->isGreaterThan($b));
+    }
+
+    //isLessThan
+    public function test_less_than_throws_exception_on_currency_mismatch(): void
+    {
+        $usd = Money::fromCents(100, Currency::USD);
+        $uah = Money::fromCents(100, Currency::UAH);
+
+        $this->expectException(CurrencyMismatchException::class);
+        $usd->isLessThan($uah);
+    }
+    public function test_less_than_returns_true_when_smaller(): void
+    {
+        $a = Money::fromCents(200, Currency::USD);
+        $b = Money::fromCents(100, Currency::USD);
+        $this->assertTrue($b->isLessThan($a));
+    }
+    public function test_less_than_returns_false_when_larger(): void
+    {
+        $a = Money::fromCents(100, Currency::USD);
+        $b = Money::fromCents(200, Currency::USD);
+        $this->assertFalse($b->isLessThan($a));
+    }
+    public function test_less_than_returns_false_when_equal(): void
+    {
+        $a = Money::fromCents(100, Currency::USD);
+        $b = Money::fromCents(100, Currency::USD);
+        $this->assertFalse($a->isLessThan($b));
     }
 }
