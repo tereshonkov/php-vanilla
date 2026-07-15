@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Money;
 
+use App\Money\MoneyExceptions\InvalidAmount;
+use App\Money\MoneyExceptions\CurrencyMismatchException;
 use InvalidArgumentException;
 use RoundingMode;
 
@@ -22,13 +24,13 @@ final readonly class Money
     public static function fromString(string $amount, Currency $c): self
     {
         if (!preg_match('/^-?\d+(\.\d+)?$/', $amount)) {
-            throw new InvalidArgumentException("Invalid money format");
+            throw new InvalidAmount($amount);
         }
 
         $parts = explode('.', $amount);
 
         if (count($parts) === 2 && strlen($parts[1]) > $c->decimals()) {
-            throw new InvalidArgumentException();
+            throw new InvalidAmount($amount);
         }
 
         $cents = (int) bcmul($amount, (string) $c->subunitFactor(), 0);
@@ -65,10 +67,6 @@ final readonly class Money
     }
     public function divide(int|string $divisor): self
     {
-        if ((string) $divisor === '0') {
-            throw new InvalidArgumentException("Division by zero");
-        }
-
         $div = bcdiv((string) $this->amount, (string) $divisor, 4);
         $rounded = bcround($div, 0, RoundingMode::HalfEven);
         return new self((int) $rounded, $this->currency);

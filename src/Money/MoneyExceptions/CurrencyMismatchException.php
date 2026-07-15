@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Money;
+namespace App\Money\MoneyExceptions;
+
+use App\Money\Currency;
 
 class CurrencyMismatchException extends \InvalidArgumentException
 {

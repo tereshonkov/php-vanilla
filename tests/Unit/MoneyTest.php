@@ -69,4 +69,13 @@ class MoneyTest extends TestCase
         $this->assertSame(150, $new->amount);
         $this->assertNotSame($usd, $new);
     }
+
+    public function test_it_negate_and_absolute(): void
+    {
+        $money = Money::fromCents(10, Currency::USD);
+        $negate = $money->negate();
+        $this->assertSame(-10, $negate->amount);
+        $absolute = $negate->absolute();
+        $this->assertSame(10, $absolute->amount);
+    }
 }
