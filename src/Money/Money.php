@@ -23,7 +23,7 @@ final readonly class Money
 
     public static function fromString(string $amount, Currency $c): self
     {
-        if (!preg_match('/^-?\d+(\.\d+)?$/', $amount)) {
+        if (!preg_match('/^(0|-?[1-9]\d*)(\.\d+)?$/', $amount)) {
             throw InvalidAmount::create($amount);
         }
 
