@@ -107,10 +107,53 @@ final readonly class Money
         $safe = self::assertNoOverflow(abs($this->amount));
         return new self($safe, $this->currency);
     }
+    public function equals(Money $other): bool
+    {
+        return $this->amount === $other->amount && $this->currency === $other->currency;
+    }
+    public function isGreaterThan(Money $other): bool
+    {
+        return $this->compareTo($other) === 1;
+    }
+    public function isLessThan(Money $other): bool
+    {
+        return $this->compareTo($other) === -1;
+    }
+    public function isGreaterThanOrEqual(Money $other): bool
+    {
+        return $this->compareTo($other) >= 0;
+    }
+    public function isLessThanOrEqual(Money $other): bool
+    {
+        return $this->compareTo($other) <= 0;
+    }
+    public function isZero(): bool
+    {
+        return $this->amount === 0;
+    }
+    public function isPositive(): bool
+    {
+        return $this->amount > 0;
+    }
+    public function isNegative(): bool
+    {
+        return $this->amount < 0;
+    }
 
     /**
      * Helpers
      */
+
+    private function compareTo(Money $other): int
+    {
+        if ($other->currency !== $this->currency) {
+            throw CurrencyMismatchException::create($other->currency, $this->currency);
+        }
+        $money = bccomp((string) $this->amount, (string) $other->amount);
+
+        return $money;
+    }
+
     private static function validateNumericFactor(int|string $value): string
     {
         $strValue = (string) $value;
