@@ -23,12 +23,7 @@ final readonly class Money
 
     public static function fromString(string $amount, Currency $c): self
     {
-        $isValidFormat = self::validateNumericFactor($amount);
-        $isNegativeZero = str_starts_with($amount, '-') && bccomp($amount, '0', 10) === 0;
-
-        if (!$isValidFormat || $isNegativeZero) {
-            throw InvalidAmount::create($amount);
-        }
+        $cleanAmount = self::validateNumericFactor($amount);
 
         $parts = explode('.', $amount);
 
@@ -41,7 +36,7 @@ final readonly class Money
             }
         }
 
-        $centsStirng = bcmul($amount, (string) $c->subunitFactor(), 0);
+        $centsStirng = bcmul($cleanAmount, (string) $c->subunitFactor(), 0);
 
         $cents = self::assertNoOverflow($centsStirng);
 
@@ -119,7 +114,10 @@ final readonly class Money
     {
         $strValue = (string) $value;
 
-        if (!preg_match('/^(0|-?[1-9]\d*)(\.\d+)?$/', $strValue)) {
+        $isValidFormat = preg_match('/^(0|-?[1-9]\d*)(\.\d+)?$/', $strValue);
+        $isNegativeZero = str_starts_with($strValue, '-') && bccomp($strValue, '0', 10) === 0;
+
+        if (!$isValidFormat || $isNegativeZero) {
             throw InvalidAmount::create($strValue);
         }
 
