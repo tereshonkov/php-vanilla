@@ -6,7 +6,7 @@ namespace App\Money;
 
 use App\Money\MoneyExceptions\InvalidAmount;
 use App\Money\MoneyExceptions\CurrencyMismatchException;
-use InvalidArgumentException;
+use App\Money\MoneyExceptions\MoneyOverflowException;
 use RoundingMode;
 
 final readonly class Money
@@ -24,18 +24,20 @@ final readonly class Money
     public static function fromString(string $amount, Currency $c): self
     {
         if (!preg_match('/^-?\d+(\.\d+)?$/', $amount)) {
-            throw new InvalidAmount($amount);
+            throw InvalidAmount::create($amount);
         }
 
         $parts = explode('.', $amount);
 
         if (count($parts) === 2 && strlen($parts[1]) > $c->decimals()) {
-            throw new InvalidAmount($amount);
+            throw InvalidAmount::create($amount);
         }
 
-        $cents = (int) bcmul($amount, (string) $c->subunitFactor(), 0);
+        $centsStirng = bcmul($amount, (string) $c->subunitFactor(), 0);
 
-        return new self($cents, $c);
+        $cent = self::assertNoOverflow($centsStirng);
+
+        return new self($cent, $c);
     }
 
     public static function zero(Currency $c): self
@@ -49,7 +51,10 @@ final readonly class Money
             throw CurrencyMismatchException::create($this->currency, $other->currency);
         };
 
-        return new self($this->amount + $other->amount, $this->currency);
+        $sum = bcadd((string) $this->amount, (string) $other->amount, 0);
+        $safe = self::assertNoOverflow($sum);
+
+        return new self($safe, $this->currency);
     }
     public function subtract(Money $other): self
     {
@@ -57,19 +62,34 @@ final readonly class Money
             throw CurrencyMismatchException::create($this->currency, $other->currency);
         };
 
-        return new self($this->amount - $other->amount, $this->currency);
+        $sub = bcsub((string) $this->amount, (string) $other->amount, 0);
+        $safe = self::assertNoOverflow($sub);
+
+        return new self($safe, $this->currency);
     }
     public function multiply(int|string $factor): self
     {
         $mult = bcmul((string) $this->amount, (string) $factor, 4);
         $rounded = bcround($mult, 0, RoundingMode::HalfEven);
-        return new self((int) $rounded, $this->currency);
+        $safe = self::assertNoOverflow($rounded);
+        return new self($safe, $this->currency);
     }
     public function divide(int|string $divisor): self
     {
+        $divisorString = (string) $divisor;
+
+        $decimalPos = strpos($divisorString, '.');
+        $scale = $decimalPos !== false ? strlen($divisorString) - $decimalPos - 1 : 0;
+
+        if (bccomp($divisorString, '0', $scale) === 0) {
+            throw InvalidAmount::divide($divisor);
+        }
+
         $div = bcdiv((string) $this->amount, (string) $divisor, 4);
         $rounded = bcround($div, 0, RoundingMode::HalfEven);
-        return new self((int) $rounded, $this->currency);
+        $safe = self::assertNoOverflow($rounded);
+
+        return new self($safe, $this->currency);
     }
     public function negate(): self
     {
@@ -78,5 +98,17 @@ final readonly class Money
     public function absolute(): self
     {
         return new self(abs($this->amount), $this->currency);
+    }
+
+    private static function assertNoOverflow(string | int $element)
+    {
+        $isTooLarge = bccomp($element, (string) PHP_INT_MAX) === 1;
+        $isTooSmall = bccomp($element, (string) PHP_INT_MIN) === -1;
+
+        if ($isTooLarge || $isTooSmall) {
+            throw MoneyOverflowException::forAmount($element);
+        }
+
+        return (int) $element;
     }
 }
