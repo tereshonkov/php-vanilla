@@ -172,7 +172,7 @@ final readonly class Money
          */
     }
 
-    public function split(int $slices): array
+    public function split(int $slices): array //КОД НЕ ГОТОВ ДОПИСАТЬ ПОД СЦЕНАРИЙ negative $slices
     {
         if ($slices <= 0) {
             throw new InvalidAllocation();
