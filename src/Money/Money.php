@@ -24,8 +24,7 @@ final readonly class Money
 
     public static function fromString(string $amount, Currency $c): self
     {
-        /** @var numeric-string $cleanAmount */
-        $cleanAmount = self::validateNumericFactor($amount);
+        $cleanAmount = self::parseNumericString($amount);
 
         $parts = explode('.', $cleanAmount);
 
@@ -65,7 +64,7 @@ final readonly class Money
     {
         if ($other->currency !== $this->currency) {
             throw CurrencyMismatchException::create($this->currency, $other->currency);
-        };
+        }
 
         $sub = bcsub((string) $this->amount, (string) $other->amount, 0);
         $safe = self::assertNoOverflow($sub);
@@ -74,8 +73,7 @@ final readonly class Money
     }
     public function multiply(int|string $factor): self
     {
-        /** @var numeric-string $factorStr */
-        $factorStr = self::validateNumericFactor($factor);
+        $factorStr = self::parseNumericString($factor);
 
         $mult = bcmul((string) $this->amount, $factorStr, 4);
         $rounded = bcround($mult, 0, RoundingMode::HalfEven);
@@ -85,8 +83,8 @@ final readonly class Money
     }
     public function divide(int|string $divisor): self
     {
-        /** @var numeric-string $divisorString */
-        $divisorString = self::validateNumericFactor($divisor);
+        $divisorString = self::parseNumericString($divisor);
+
         $decimalPos = strpos($divisorString, '.');
         $scale = $decimalPos !== false ? strlen($divisorString) - $decimalPos - 1 : 0;
 
@@ -107,8 +105,12 @@ final readonly class Money
     }
     public function absolute(): self
     {
-        $safe = self::assertNoOverflow(abs($this->amount));
-        return new self($safe, $this->currency);
+        // нельзя вызывать abs(), он может кастонуть число на float.
+        if ($this->amount === PHP_INT_MIN) {
+            throw MoneyOverflowException::forAmount((string) PHP_INT_MIN);
+        }
+
+        return new self(abs($this->amount), $this->currency);
     }
     public function equals(Money $other): bool
     {
@@ -168,7 +170,7 @@ final readonly class Money
          */
     }
 
-    
+
 
     /**
      * Helpers
@@ -184,7 +186,7 @@ final readonly class Money
     }
 
     /** @return numeric-string */
-    private static function validateNumericFactor(int|string $value): string
+    private static function parseNumericString(int|string $value): string
     {
         /** @var numeric-string $strValue */
         $strValue = (string) $value;

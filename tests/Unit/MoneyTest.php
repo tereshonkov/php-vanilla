@@ -8,6 +8,7 @@ use App\Money\Currency;
 use App\Money\Money;
 use App\Money\MoneyExceptions\CurrencyMismatchException;
 use App\Money\MoneyExceptions\InvalidAmount;
+use App\Money\MoneyExceptions\MoneyOverflowException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -106,15 +107,21 @@ final class MoneyTest extends TestCase
 
     // negative and absolute
 
-    public function test_negate_and_absolute_calculations(): void
+    public function test_absolute_calculations(): void
+    {
+        $money = Money::fromCents(10, Currency::USD);
+
+        $negate = $money->negate();
+        $absolute = $negate->absolute();
+
+        $this->assertSame(10, $absolute->amount);
+    }
+    public function test_negate_calculations(): void
     {
         $money = Money::fromCents(10, Currency::USD);
 
         $negate = $money->negate();
         $this->assertSame(-10, $negate->amount);
-
-        $absolute = $negate->absolute();
-        $this->assertSame(10, $absolute->amount);
     }
 
 
@@ -230,5 +237,12 @@ final class MoneyTest extends TestCase
         $uah = $original->withCurrency(Currency::UAH);
         $this->assertNotSame($original, $uah);
         $this->assertSame($original->toDecimalString(), $uah->toDecimalString());
+    }
+    public function test_absolute_overflow_with_php_int_min(): void
+    {
+        $money = Money::fromCents(PHP_INT_MIN, Currency::USD);
+
+        $this->expectException(MoneyOverflowException::class);
+        $money->absolute();
     }
 }
