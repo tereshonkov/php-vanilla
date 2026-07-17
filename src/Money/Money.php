@@ -172,7 +172,7 @@ final readonly class Money
          */
     }
 
-    public function split(int $slices): array //КОД НЕ ГОТОВ ДОПИСАТЬ ПОД СЦЕНАРИЙ negative $slices
+    public function split(int $slices): array
     {
         if ($slices <= 0) {
             throw new InvalidAllocation();
@@ -189,10 +189,12 @@ final readonly class Money
         $allocatedSum = bcmul($basicDivide, (string)$slices, 0);
         $remainder = bcsub((string)$this->amount, $allocatedSum, 0);
 
+        $step = bccomp($remainder, '0', 0) < 0 ? '-1' : '1';
+
         foreach ($arr as $key => $value) {
-            if (bccomp($remainder, '0', 0) > 0) {
-                $remainder = bcsub($remainder, '1', 0);
-                $arr[$key] = bcadd($value, '1', 0);
+            if (bccomp($remainder, '0', 0) !== 0) {
+                $remainder = bcsub($remainder, $step, 0);
+                $arr[$key] = bcadd($value, $step, 0);
             }
         }
 
