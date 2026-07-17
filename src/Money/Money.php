@@ -6,8 +6,10 @@ namespace App\Money;
 
 use App\Money\MoneyExceptions\CurrencyMismatchException;
 use App\Money\MoneyExceptions\DivisionByZeroException;
+use App\Money\MoneyExceptions\InvalidAllocation;
 use App\Money\MoneyExceptions\InvalidAmount;
 use App\Money\MoneyExceptions\MoneyOverflowException;
+use InvalidArgumentException;
 use RoundingMode;
 
 final readonly class Money
@@ -170,7 +172,38 @@ final readonly class Money
          */
     }
 
+    public function split(int $slices): array
+    {
+        if ($slices <= 0) {
+            throw new InvalidAllocation();
+        }
 
+        $basicDivide = bcdiv((string)$this->amount, (string)$slices, 0);
+
+        $arr = [];
+
+        for ($i = 0; $i < $slices; $i++) {
+            $arr[$i] = $basicDivide;
+        }
+
+        $allocatedSum = bcmul($basicDivide, (string)$slices, 0);
+        $remainder = bcsub((string)$this->amount, $allocatedSum, 0);
+
+        foreach ($arr as $key => $value) {
+            if (bccomp($remainder, '0', 0) > 0) {
+                $remainder = bcsub($remainder, '1', 0);
+                $arr[$key] = bcadd($value, '1', 0);
+            }
+        }
+
+        $result = [];
+
+        foreach ($arr as $stringAmount) {
+            $result[] = self::fromCents((int) $stringAmount, $this->currency);
+        }
+
+        return $result;
+    }
 
     /**
      * Helpers

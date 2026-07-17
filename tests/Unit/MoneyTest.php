@@ -7,6 +7,7 @@ namespace Tests\Unit;
 use App\Money\Currency;
 use App\Money\Money;
 use App\Money\MoneyExceptions\CurrencyMismatchException;
+use App\Money\MoneyExceptions\InvalidAllocation;
 use App\Money\MoneyExceptions\InvalidAmount;
 use App\Money\MoneyExceptions\MoneyOverflowException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -244,5 +245,42 @@ final class MoneyTest extends TestCase
 
         $this->expectException(MoneyOverflowException::class);
         $money->absolute();
+    }
+
+    public function test_split_3_slices(): void
+    {
+        $sum = Money::fromCents(100, Currency::USD);
+        $split = $sum->split(3); //[34, 33, 33]
+
+        $this->assertCount(3, $split);
+        $this->assertSame('34', $split[0]->amount);
+        $this->assertSame('33', $split[1]->amount);
+        $this->assertSame('33', $split[2]->amount);
+    }
+    public function test_split_4_slices(): void
+    {
+        $sum = Money::fromCents(10, Currency::USD);
+        $split = $sum->split(4); //[3, 3, 2, 2]
+
+        $this->assertCount(4, $split);
+        $this->assertSame('3', $split[0]->amount);
+        $this->assertSame('3', $split[1]->amount);
+        $this->assertSame('2', $split[2]->amount);
+        $this->assertSame('2', $split[3]->amount);
+    }
+    public function test_split_1_slices(): void
+    {
+        $sum = Money::fromCents(100, Currency::USD);
+        $split = $sum->split(1); //100
+
+        $this->assertCount(1, $split);
+        $this->assertSame('100', $split[0]->amount);
+    }
+    public function test_split_0_slices_exception(): void
+    {
+        $sum = Money::fromCents(100, Currency::USD);
+
+        $this->expectException(InvalidAllocation::class);
+        $sum->split(0);
     }
 }
