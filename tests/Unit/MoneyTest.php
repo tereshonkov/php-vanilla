@@ -198,4 +198,37 @@ final class MoneyTest extends TestCase
         $b = Money::fromCents(100, Currency::USD);
         $this->assertFalse($a->isLessThan($b));
     }
+    public function test_to_decimal_string_basic_USD(): void
+    {
+        $string = Money::fromCents(1999, Currency::USD);
+        $this->assertSame('19.99', $string->toDecimalString());
+    }
+    public function test_to_decimal_string_basic_JPY(): void
+    {
+        $string = Money::fromCents(1999, Currency::JPY);
+        $this->assertSame('1999', $string->toDecimalString());
+    }
+    public function test_to_decimal_string_negative(): void
+    {
+        $negative = Money::fromCents(-5, Currency::USD);
+        $this->assertSame('-0.05', $negative->toDecimalString());
+    }
+    public function test_to_format_USD(): void
+    {
+        $money = Money::fromString('100', Currency::USD);
+        $this->assertSame('100.00 $', $money->format());
+    }
+
+    public function test_to_format_JPY(): void
+    {
+        $money = Money::fromString('100', Currency::JPY);
+        $this->assertSame('100 ¥', $money->format());
+    }
+    public function test_to_coppied_with_currency(): void
+    {
+        $original = Money::fromString('100', Currency::USD);
+        $uah = $original->withCurrency(Currency::UAH);
+        $this->assertNotSame($original, $uah);
+        $this->assertSame($original->toDecimalString(), $uah->toDecimalString());
+    }
 }
