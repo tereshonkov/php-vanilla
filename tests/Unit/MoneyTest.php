@@ -232,6 +232,13 @@ final class MoneyTest extends TestCase
         $money = Money::fromString('100', Currency::JPY);
         $this->assertSame('100 ¥', $money->format());
     }
+    public function test_currency_decimals_and_symbols(): void
+    {
+        $this->assertSame(2, Currency::EUR->decimals());
+        $this->assertSame('€', Currency::EUR->symbol());
+
+        $this->assertSame('₴', Currency::UAH->symbol());
+    }
     public function test_to_coppied_with_currency(): void
     {
         $original = Money::fromString('100', Currency::USD);
@@ -300,7 +307,7 @@ final class MoneyTest extends TestCase
     public function test_split_never_loses_money(): void
     {
         for ($i = 0; $i < 100; $i++) {
-            $amount = random_int(-100000, 100000); 
+            $amount = random_int(-100000, 100000);
             $slices = random_int(1, 20);
 
             $parts = Money::fromCents($amount, Currency::USD)->split($slices);
@@ -309,7 +316,109 @@ final class MoneyTest extends TestCase
             $this->assertSame(
                 $amount,
                 $sum,
-                "Lost money: amount=$amount, slices=$slices" 
+                "Lost money: amount=$amount, slices=$slices",
+            );
+        }
+    }
+    public function test_split_by_zero_slices_throws_exception(): void
+    {
+        $money = Money::fromCents(100, Currency::USD);
+
+        $this->expectException(InvalidAllocation::class);
+        $money->split(0);
+    }
+
+    /**
+     * @return array<string, array{0: int, 1: array<int>, 2: array<int>}>
+     */
+    public static function allocateDataProvider(): array
+    {
+        return [
+            '100 cents with 1:3:1 ratios' => [100, [1, 3, 1], [20, 60, 20]],
+            '100 cents with 7:3 ratios'   => [100, [7, 3], [70, 30]],
+            '99 cents with 1:1:1 ratios'  => [99, [1, 1, 1], [33, 33, 33]],
+            'One ratio takes everything'  => [100, [1], [100]],
+            'Zero ratio gets nothing'     => [100, [1, 0], [100, 0]],
+            '10 cents with 1:1:1 (remainder)' => [10, [1, 1, 1], [4, 3, 3]],
+        ];
+    }
+
+    #[DataProvider('allocateDataProvider')]
+    public function test_allocate_proportional_cases(int $amount, array $ratios, array $expectedCents): void
+    {
+        $money = Money::fromCents($amount, Currency::USD);
+        $result = $money->allocate(...$ratios);
+
+        $this->assertCount(count($expectedCents), $result);
+        foreach ($expectedCents as $key => $expected) {
+            $this->assertSame($expected, $result[$key]->amount);
+        }
+    }
+
+    public function test_allocate_rounding_to_zero_boundary(): void
+    {
+        $money = Money::fromCents(1, Currency::USD);
+        $result = $money->allocate(1, 1);
+
+        $this->assertCount(2, $result);
+        $this->assertSame(1, $result[0]->amount);
+        $this->assertSame(0, $result[1]->amount);
+    }
+
+    /**
+     * (Exceptions)
+     */
+    public function test_allocate_empty_arguments_exception(): void
+    {
+        $money = Money::fromCents(100, Currency::USD);
+        $this->expectException(InvalidAllocation::class);
+        $money->allocate();
+    }
+
+    public function test_allocate_zero_sum_exception(): void
+    {
+        $money = Money::fromCents(100, Currency::USD);
+        $this->expectException(InvalidAllocation::class);
+        $money->allocate(0, 0, 0);
+    }
+
+    public function test_allocate_negative_ratio_exception(): void
+    {
+        $money = Money::fromCents(100, Currency::USD);
+        $this->expectException(InvalidAllocation::class);
+        $money->allocate(1, -1, 2);
+    }
+
+    /**
+     * Property-based
+     */
+    public function test_allocate_never_loses_money_including_negative_amounts(): void
+    {
+        for ($i = 0; $i < 100; $i++) {
+            $amount = random_int(-100000, 100000);
+
+            $ratiosCount = random_int(1, 10);
+            $ratios = [];
+            for ($j = 0; $j < $ratiosCount; $j++) {
+                $ratios[] = random_int(0, 50);
+            }
+
+            if (array_sum($ratios) === 0) {
+                $ratios[0] = 1;
+            }
+
+            $money = Money::fromCents($amount, Currency::USD);
+            $parts = $money->allocate(...$ratios);
+
+            $totalDistributed = 0;
+            foreach ($parts as $part) {
+                $totalDistributed += $part->amount;
+            }
+
+            $this->assertSame(
+                $amount,
+                $totalDistributed,
+                "Money loss detected: amount=$amount, ratios=" . implode(',', $ratios),
             );
         }
     }

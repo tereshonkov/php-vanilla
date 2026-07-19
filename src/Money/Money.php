@@ -180,16 +180,46 @@ final readonly class Money
             throw InvalidAllocation::nonPositiveSlices($slices);
         }
 
-        $basicDivide = bcdiv((string) $this->amount, (string) $slices, 0);
+        $ratios = array_fill(0, $slices, 1);
+
+        return $this->allocate(...$ratios);
+    }
+
+    /**
+     * @return list<self>
+     */
+    public function allocate(int ...$ratios): array
+    {
+        if ($ratios === []) {
+            throw InvalidAllocation::emptyArguments();
+        }
+
+        foreach ($ratios as $ratio) {
+            if ($ratio < 0) {
+                throw InvalidAllocation::negativeValue($ratio);
+            }
+        }
+
+        $parts = array_sum($ratios);
+
+        if ($parts === 0) {
+            throw InvalidAllocation::zeroSum();
+        }
 
         $arr = [];
 
-        for ($i = 0; $i < $slices; $i++) {
-            $arr[$i] = $basicDivide;
+        foreach ($ratios as $ratio) {
+            $multiplication = bcmul((string) $this->amount, (string) $ratio, 0);
+            $arr[] = bcdiv($multiplication, (string) $parts, 0);
         }
 
-        $allocatedSum = bcmul($basicDivide, (string) $slices, 0);
-        $remainder = bcsub((string) $this->amount, $allocatedSum, 0);
+        $sum = '0';
+
+        foreach ($arr as $part) {
+            $sum = bcadd($sum, $part, 0);
+        }
+
+        $remainder = bcsub((string) $this->amount, (string) $sum, 0);
 
         $step = bccomp($remainder, '0', 0) < 0 ? '-1' : '1';
 
