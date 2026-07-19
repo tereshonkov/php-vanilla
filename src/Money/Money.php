@@ -178,7 +178,7 @@ final readonly class Money
             throw new InvalidAllocation();
         }
 
-        $basicDivide = bcdiv((string)$this->amount, (string)$slices, 0);
+        $basicDivide = bcdiv((string) $this->amount, (string) $slices, 0);
 
         $arr = [];
 
@@ -186,8 +186,8 @@ final readonly class Money
             $arr[$i] = $basicDivide;
         }
 
-        $allocatedSum = bcmul($basicDivide, (string)$slices, 0);
-        $remainder = bcsub((string)$this->amount, $allocatedSum, 0);
+        $allocatedSum = bcmul($basicDivide, (string) $slices, 0);
+        $remainder = bcsub((string) $this->amount, $allocatedSum, 0);
 
         $step = bccomp($remainder, '0', 0) < 0 ? '-1' : '1';
 
