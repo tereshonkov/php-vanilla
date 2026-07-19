@@ -9,7 +9,6 @@ use App\Money\MoneyExceptions\DivisionByZeroException;
 use App\Money\MoneyExceptions\InvalidAllocation;
 use App\Money\MoneyExceptions\InvalidAmount;
 use App\Money\MoneyExceptions\MoneyOverflowException;
-use InvalidArgumentException;
 use RoundingMode;
 
 final readonly class Money
@@ -172,10 +171,13 @@ final readonly class Money
          */
     }
 
+    /**
+     * @return list<self>
+     */
     public function split(int $slices): array
     {
         if ($slices <= 0) {
-            throw new InvalidAllocation();
+            throw InvalidAllocation::nonPositiveSlices($slices);
         }
 
         $basicDivide = bcdiv((string) $this->amount, (string) $slices, 0);

@@ -253,9 +253,9 @@ final class MoneyTest extends TestCase
         $split = $sum->split(3); //[34, 33, 33]
 
         $this->assertCount(3, $split);
-        $this->assertSame('34', $split[0]->amount);
-        $this->assertSame('33', $split[1]->amount);
-        $this->assertSame('33', $split[2]->amount);
+        $this->assertSame(34, $split[0]->amount);
+        $this->assertSame(33, $split[1]->amount);
+        $this->assertSame(33, $split[2]->amount);
     }
     public function test_split_4_slices(): void
     {
@@ -263,10 +263,10 @@ final class MoneyTest extends TestCase
         $split = $sum->split(4); //[3, 3, 2, 2]
 
         $this->assertCount(4, $split);
-        $this->assertSame('3', $split[0]->amount);
-        $this->assertSame('3', $split[1]->amount);
-        $this->assertSame('2', $split[2]->amount);
-        $this->assertSame('2', $split[3]->amount);
+        $this->assertSame(3, $split[0]->amount);
+        $this->assertSame(3, $split[1]->amount);
+        $this->assertSame(2, $split[2]->amount);
+        $this->assertSame(2, $split[3]->amount);
     }
     public function test_split_1_slices(): void
     {
@@ -274,7 +274,7 @@ final class MoneyTest extends TestCase
         $split = $sum->split(1); //100
 
         $this->assertCount(1, $split);
-        $this->assertSame('100', $split[0]->amount);
+        $this->assertSame(100, $split[0]->amount);
     }
     public function test_split_0_slices_exception(): void
     {
@@ -282,5 +282,35 @@ final class MoneyTest extends TestCase
 
         $this->expectException(InvalidAllocation::class);
         $sum->split(0);
+    }
+    public function test_split_negative_slices(): void
+    {
+        $num = Money::fromCents(100, Currency::USD);
+        $this->expectException(InvalidAllocation::class);
+        $num->split(-1);
+    }
+    public function test_split_negative_amount_preserves_sum(): void
+    {
+        $money = Money::fromCents(-10, Currency::USD);
+        $parts = $money->split(3);
+
+        $sum = array_sum(array_map(fn(Money $m) => $m->amount, $parts));
+        $this->assertSame(-10, $sum);
+    }
+    public function test_split_never_loses_money(): void
+    {
+        for ($i = 0; $i < 100; $i++) {
+            $amount = random_int(-100000, 100000); 
+            $slices = random_int(1, 20);
+
+            $parts = Money::fromCents($amount, Currency::USD)->split($slices);
+            $sum = array_sum(array_map(fn(Money $m) => $m->amount, $parts));
+
+            $this->assertSame(
+                $amount,
+                $sum,
+                "Lost money: amount=$amount, slices=$slices" 
+            );
+        }
     }
 }

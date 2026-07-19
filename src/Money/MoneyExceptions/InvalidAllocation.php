@@ -8,5 +8,8 @@ use InvalidArgumentException;
 
 final class InvalidAllocation extends InvalidArgumentException implements MoneyException
 {
-    // In proccess....
+    public static function nonPositiveSlices(int $slices): self
+    {
+        return new self("{$slices} can't be non positive!");
+    }
 }
