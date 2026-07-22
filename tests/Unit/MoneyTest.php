@@ -7,6 +7,7 @@ namespace Tests\Unit;
 use App\Money\Currency;
 use App\Money\Money;
 use App\Money\MoneyExceptions\CurrencyMismatchException;
+use App\Money\MoneyExceptions\DivisionByZeroException;
 use App\Money\MoneyExceptions\InvalidAllocation;
 use App\Money\MoneyExceptions\InvalidAmount;
 use App\Money\MoneyExceptions\MoneyOverflowException;
@@ -93,6 +94,16 @@ final class MoneyTest extends TestCase
         $result = $usd->multiply($multiplier);
 
         $this->assertSame($expectedCents, $result->amount);
+    }
+    public function test_multiply_and_divide_four_decimal_precision(): void
+    {
+        $money = Money::fromCents(100, Currency::USD);
+
+        $this->assertSame(1, $money->multiply('0.0055')->amount);
+        $this->assertSame(0, $money->multiply('0.0044')->amount);
+
+        $this->expectException(DivisionByZeroException::class);
+        $money->divide('0.0000');
     }
 
     // Immutable
@@ -239,12 +250,17 @@ final class MoneyTest extends TestCase
 
         $this->assertSame('₴', Currency::UAH->symbol());
     }
-    public function test_to_coppied_with_currency(): void
+    public function test_with_currency_changes_currency_and_keeps_original_immutable(): void
     {
-        $original = Money::fromString('100', Currency::USD);
+        $original = Money::fromCents(1000, Currency::USD);
+
         $uah = $original->withCurrency(Currency::UAH);
-        $this->assertNotSame($original, $uah);
+
+        $this->assertSame(Currency::UAH, $uah->currency);
+
+        $this->assertSame(Currency::USD, $original->currency);
         $this->assertSame($original->toDecimalString(), $uah->toDecimalString());
+        $this->assertNotSame($original, $uah);
     }
     public function test_absolute_overflow_with_php_int_min(): void
     {
@@ -283,13 +299,6 @@ final class MoneyTest extends TestCase
         $this->assertCount(1, $split);
         $this->assertSame(100, $split[0]->amount);
     }
-    public function test_split_0_slices_exception(): void
-    {
-        $sum = Money::fromCents(100, Currency::USD);
-
-        $this->expectException(InvalidAllocation::class);
-        $sum->split(0);
-    }
     public function test_split_negative_slices(): void
     {
         $num = Money::fromCents(100, Currency::USD);
@@ -323,7 +332,7 @@ final class MoneyTest extends TestCase
     public function test_split_by_zero_slices_throws_exception(): void
     {
         $money = Money::fromCents(100, Currency::USD);
-
+        $this->expectExceptionMessage('Number of slices must be positive, got 0');
         $this->expectException(InvalidAllocation::class);
         $money->split(0);
     }
@@ -354,6 +363,14 @@ final class MoneyTest extends TestCase
             $this->assertSame($expected, $result[$key]->amount);
         }
     }
+    public function test_allocate_negative_amount_remainder_step(): void
+    {
+        $money = Money::fromCents(-5, Currency::USD);
+        $result = $money->allocate(1, 1);
+
+        $this->assertSame(-3, $result[0]->amount);
+        $this->assertSame(-2, $result[1]->amount);
+    }
 
     public function test_allocate_rounding_to_zero_boundary(): void
     {
@@ -372,6 +389,7 @@ final class MoneyTest extends TestCase
     {
         $money = Money::fromCents(100, Currency::USD);
         $this->expectException(InvalidAllocation::class);
+        $this->expectExceptionMessage('At least one allocation ratio must be provided.');
         $money->allocate();
     }
 

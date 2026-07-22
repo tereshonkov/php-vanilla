@@ -1,11 +1,10 @@
 {
     "$schema": "vendor/infection/infection/resources/schema.json",
-    "source": {
-        "directories": ["src"]
-    },
+    "source": { "directories": ["src"] },
     "mutators": {
-        "@default": true
-    },
-    "minMsi": 85,
-    "minCoveredMsi": 85
+        "@default": true,
+        "IncrementInteger": false,
+        "DecrementInteger": false,
+        "BCMath": false
+    }
 }

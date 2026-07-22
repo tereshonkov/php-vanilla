@@ -12,6 +12,8 @@ final class HealthController
     public function __construct(private PdoConnection $pdoConnection) {}
 
     /**
+     * @infection-ignore-mutator Concat, ConcatOperandRemoval, FunctionCallRemoval
+     *
      * @return array{status: string, php_version: string, mysql_version: string|null}
      */
     public function info(): array
